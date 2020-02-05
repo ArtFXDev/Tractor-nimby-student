@@ -1,4 +1,4 @@
-import { app, ipcMain, Tray } from 'electron';
+import { app, ipcMain, Tray, autoUpdater } from 'electron';
 import { hostname } from 'os';
 import serve from 'electron-serve';
 const path = require('path');
@@ -59,26 +59,38 @@ if (isProd) {
 var tsid = undefined;
 var hnm = undefined;
 
+const server = "hazel-q9yefairz.now.sh";
+const feed = `${server}/update/${process.platform}/${app.getVersion()}`;
+autoUpdater.setFeedURL(feed);
+
+setInterval(() => {
+  autoUpdater.checkForUpdates()
+}, 1000 * 60);
+
+autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+  autoUpdater.quitAndInstall();
+});
+
 (async () => {
   await app.whenReady();
 
-  // const mainWindow = createWindow('main', {
-  //   width: 300,
-  //   height: 350,
-  //   center: true,
-  //   // skipTaskbar: true,
-  //   frame: false,
-  //   resizable: false,
-  //   closable: false,
-  //   maximizable: false,
-  // });
-  //
-  // const homeUrl = isProd ? 'app://./home.html' : 'http://localhost:8888/home';
-  // await mainWindow.loadURL(homeUrl);
-  //
-  // if (!isProd) {
-  //   mainWindow.webContents.openDevTools();
-  // }
+  const mainWindow = createWindow('main', {
+    width: 300,
+    height: 350,
+    center: true,
+    // skipTaskbar: true,
+    frame: false,
+    resizable: false,
+    closable: false,
+    maximizable: false,
+  });
+
+  const homeUrl = isProd ? 'app://./home.html' : 'http://localhost:8888/home';
+  await mainWindow.loadURL(homeUrl);
+
+  if (!isProd) {
+    mainWindow.webContents.openDevTools();
+  }
 
   tray = new Tray(path.join(__dirname, '../main/nimby.png'));
   tray.setToolTip('NIMBY');
