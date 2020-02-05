@@ -1,6 +1,6 @@
-appId: com.example.nextron
-productName: My Nextron App
-copyright: Copyright © 2018 Yoshihide Shiono
+appId: graphics.lee.tractor-nimby
+productName: Tractor Nimby ArtFx
+copyright: Copyright © 2020 Lee Geertsen
 directories:
   output: dist
   buildResources: resources

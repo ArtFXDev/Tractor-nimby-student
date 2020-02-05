@@ -1,5 +1,7 @@
 import { app, ipcMain, Tray } from 'electron';
+import { hostname } from 'os';
 import serve from 'electron-serve';
+const path = require('path');
 import {
   createWindow,
   exitOnChange,
@@ -10,8 +12,12 @@ import axios from 'axios';
 
 const isProd = process.env.NODE_ENV === 'production';
 
-let tray = null
+let tray = null;
+var checkProcessInterval;
 
+var nimbyOn = false;
+var processFound = false;
+var softIndex = 0;
 const softwares = [
   "3dsmax",
   "Adobe Premiere Pro",
@@ -51,17 +57,31 @@ if (isProd) {
 }
 
 var tsid = undefined;
+var hnm = undefined;
 
 (async () => {
   await app.whenReady();
 
-  tray = new Tray('./main/nimby.png')
-  tray.setToolTip('NIMBY')
+  // const mainWindow = createWindow('main', {
+  //   width: 300,
+  //   height: 350,
+  //   center: true,
+  //   // skipTaskbar: true,
+  //   frame: false,
+  //   resizable: false,
+  //   closable: false,
+  //   maximizable: false,
+  // });
+  //
+  // const homeUrl = isProd ? 'app://./home.html' : 'http://localhost:8888/home';
+  // await mainWindow.loadURL(homeUrl);
+  //
+  // if (!isProd) {
+  //   mainWindow.webContents.openDevTools();
+  // }
 
-  find('name', 'TVPaint Animation 10 (32bits)', true)
-  .then(function (list) {
-    console.log(list);
-  });
+  tray = new Tray(path.join(__dirname, '../main/nimby.png'));
+  tray.setToolTip('NIMBY');
 
   axios.get('http://tractor/Tractor/monitor?q=login&user=root')
   .then(function (response) {
@@ -78,31 +98,87 @@ var tsid = undefined;
     // always executed
   });
 
-  // "http://ENGINE/Tractor/monitor?q=login&user=UUUU"
+  axios.get(`http://localhost:9005/blade/status`)
+    .then(function (response) {
+      // handle success
+      console.log(response.data);
+      hnm = response.data.hnm;
+    })
+    .catch(function (error) {
+      // handle error
+      console.log(error);
+      console.log("-------------------- ERROR ----------------------------");
+    })
 
-  // const mainWindow = createWindow('main', {
-  //   width: 1000,
-  //   height: 600,
-  //   center: true,
-  //   skipTaskbar: true,
-  //   frame: false,
-  //   resizable: false,
-  //   closable: false,
-  //   maximizable: false,
-  // });
-  //
-  // const homeUrl = isProd ? 'app://./home.html' : 'http://localhost:8888/home';
-  // await mainWindow.loadURL(homeUrl);
-  //
-  // if (!isProd) {
-  //   mainWindow.webContents.openDevTools();
-  // }
+  checkForProcess();
 })();
+
+async function checkForProcess() {
+  console.log("Check for Processes");
+  console.log(softwares[softIndex]);
+    find('name', softwares[softIndex], true).then(list => {
+      console.log(list);
+      if(list.length > 0) {
+        processFound = true;
+        if(!nimbyOn) {
+          nimbyOn = true;
+          axios.get(`http://localhost:9005/blade/ctrl?nimby=1`)
+            .then(function (response) {
+              // handle success
+              console.log(response.data);
+              if(hnm && tsid) {
+                axios.get(`http://tractor/Tractor/queue?q=ejectall&blade=${hnm}&tsid=${tsid}`)
+                  .then(function (response) {
+                    // handle success
+                    console.log(response.data);
+                  })
+                  .catch(function (error) {
+                    // handle error
+                    console.log(error);
+                    console.log("-------------------- ERROR ----------------------------");
+                  })
+              }
+            })
+            .catch(function (error) {
+              // handle error
+              console.log(error);
+              console.log("-------------------- ERROR ----------------------------");
+            })
+        }
+      }
+
+      softIndex += 1;
+      if(softIndex == softwares.length) {
+        if(!processFound) {
+          if(nimbyOn) {
+            nimbyOn = false;
+            axios.get(`http://localhost:9005/blade/ctrl?nimby=0`)
+              .then(function (response) {
+                // handle success
+                console.log(response.data);
+              })
+              .catch(function (error) {
+                // handle error
+                console.log(error);
+                console.log("-------------------- ERROR ----------------------------");
+              })
+              .finally(function () {
+                // always executed
+              });
+          }
+        }
+        processFound = false;
+        softIndex = 0;
+      }
+
+      checkForProcess();
+    });
+};
 
 app.on('window-all-closed', () => {
   app.quit();
 });
 
-ipcMain.on('get-base-url', (event) => {
-  event.returnValue = isProd ? 'app://./' : 'http://localhost:8888';
-});
+app.setLoginItemSettings({
+  openAtLogin: true,
+})
