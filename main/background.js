@@ -122,49 +122,10 @@ autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
       console.log("-------------------- ERROR ----------------------------");
     })
 
-  checkForProcess();
-})();
+  // checkForProcess();
 
-async function checkForProcess() {
-  console.log("Check for Processes");
-  console.log(softwares[softIndex]);
-    find('name', softwares[softIndex], true).then(list => {
-      console.log(list);
-      if(list.length > 0) {
-        processFound = true;
-        if(!nimbyOn) {
-          nimbyOn = true;
-          axios.get(`http://localhost:9005/blade/ctrl?nimby=1`)
-            .then(function (response) {
-              // handle success
-              console.log(response.data);
-              if(hnm && tsid) {
-                axios.get(`http://tractor/Tractor/queue?q=ejectall&blade=${hnm}&tsid=${tsid}`)
-                  .then(function (response) {
-                    // handle success
-                    console.log(response.data);
-                  })
-                  .catch(function (error) {
-                    // handle error
-                    console.log(error);
-                    console.log("-------------------- ERROR ----------------------------");
-                  })
-              }
-            })
-            .catch(function (error) {
-              // handle error
-              console.log(error);
-              console.log("-------------------- ERROR ----------------------------");
-            })
-        }
-      }
-
-      softIndex += 1;
-      if(softIndex == softwares.length) {
-        if(!processFound) {
-          if(nimbyOn) {
-            nimbyOn = false;
-            axios.get(`http://localhost:9005/blade/ctrl?nimby=0`)
+  setInterval(() => {
+    axios.get(`http://localhost:9005/blade/ctrl?nimby=0`)
               .then(function (response) {
                 // handle success
                 console.log(response.data);
@@ -177,11 +138,80 @@ async function checkForProcess() {
               .finally(function () {
                 // always executed
               });
-          }
-        }
-        processFound = false;
-        softIndex = 0;
-      }
+  }, 1000 * 10);
+})();
+
+async function checkForProcess() {
+  console.log("Check for Processes");
+  console.log(softwares[softIndex]);
+    // find('name', softwares[softIndex], true).then(list => {
+    //   console.log(list);
+    //   if(list.length > 0) {
+    //     processFound = true;
+    //     if(!nimbyOn) {
+    //       nimbyOn = true;
+    //       axios.get(`http://localhost:9005/blade/ctrl?nimby=1`)
+    //         .then(function (response) {
+    //           // handle success
+    //           console.log(response.data);
+    //           if(hnm && tsid) {
+    //             axios.get(`http://tractor/Tractor/queue?q=ejectall&blade=${hnm}&tsid=${tsid}`)
+    //               .then(function (response) {
+    //                 // handle success
+    //                 console.log(response.data);
+    //               })
+    //               .catch(function (error) {
+    //                 // handle error
+    //                 console.log(error);
+    //                 console.log("-------------------- ERROR ----------------------------");
+    //               })
+    //           }
+    //         })
+    //         .catch(function (error) {
+    //           // handle error
+    //           console.log(error);
+    //           console.log("-------------------- ERROR ----------------------------");
+    //         })
+    //     }
+    //   }
+    //
+    //   softIndex += 1;
+    //   if(softIndex == softwares.length) {
+    //     if(!processFound) {
+    //       if(nimbyOn) {
+    //         nimbyOn = false;
+    //         axios.get(`http://localhost:9005/blade/ctrl?nimby=0`)
+    //           .then(function (response) {
+    //             // handle success
+    //             console.log(response.data);
+    //           })
+    //           .catch(function (error) {
+    //             // handle error
+    //             console.log(error);
+    //             console.log("-------------------- ERROR ----------------------------");
+    //           })
+    //           .finally(function () {
+    //             // always executed
+    //           });
+    //       }
+    //     }
+    //     processFound = false;
+    //     softIndex = 0;
+    //   }
+
+    // axios.get(`http://localhost:9005/blade/ctrl?nimby=0`)
+    //           .then(function (response) {
+    //             // handle success
+    //             console.log(response.data);
+    //           })
+    //           .catch(function (error) {
+    //             // handle error
+    //             console.log(error);
+    //             console.log("-------------------- ERROR ----------------------------");
+    //           })
+    //           .finally(function () {
+    //             // always executed
+    //           });
 
       checkForProcess();
     });
